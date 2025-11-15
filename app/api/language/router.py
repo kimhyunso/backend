@@ -19,7 +19,7 @@ def service(db: DbDep) -> LanguageService:
     return LanguageService(db)
 
 
-@router.get("/", response_model=List[Language])
+@router.get("", response_model=List[Language])
 async def list_languages(svc: LanguageService = Depends(service)):
     return await svc.list_languages()
 
@@ -29,7 +29,7 @@ async def get_language(language_code: str, svc: LanguageService = Depends(servic
     return await svc.get_language(language_code)
 
 
-@router.post("/", response_model=Language, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=Language, status_code=status.HTTP_201_CREATED)
 async def create_language(
     payload: LanguageCreate, svc: LanguageService = Depends(service)
 ):

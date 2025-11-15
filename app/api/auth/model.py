@@ -41,7 +41,7 @@ class UserOut(BaseModel):
     hashed_password: str
     email: EmailStr
     createdAt: datetime
-    google_sub: str
+    google_sub: Optional[str] = None
     youtube_channel: Optional["YoutubeChannel"] = None
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
