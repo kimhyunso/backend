@@ -41,6 +41,7 @@ class UserOut(BaseModel):
     hashed_password: str
     email: EmailStr
     createdAt: datetime
+    youtube_channel: Optional["YoutubeChannel"] = None
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
 
@@ -56,3 +57,11 @@ class RefreshTokenRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     current_password: str = Field(..., min_length=6)
     new_password: str = Field(..., min_length=6)
+
+
+class YoutubeChannel(BaseModel):
+    channel_id: str
+    title: str
+    thumbnail_url: str | None = None
+    connected_at: datetime | None = None
+    updated_at: datetime | None = None
