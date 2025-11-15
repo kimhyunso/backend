@@ -13,8 +13,8 @@ from .models import (
     ProjectTarget,
     ProjectTargetUpdate,
 )
-
-# from ..pipeline.service import _create_default_pipeline
+from app.config.s3 import drop_projects
+from app.config.env import settings
 
 
 class ProjectService:
@@ -23,6 +23,8 @@ class ProjectService:
         self.project_collection = db.get_collection("projects")
         self.segment_collection = db.get_collection("segments")
         self.target_collection = db.get_collection("project_targets")
+        self.bucket = settings.S3_BUCKET
+
 
     async def get_project_by_id(self, project_id: str) -> ProjectPublic:
         doc = await self.project_collection.find_one({"_id": ObjectId(project_id)})
@@ -102,6 +104,7 @@ class ProjectService:
         return [ProjectOut.model_validate(doc) for doc in docs]
 
     async def delete_project(self, project_id: str) -> int:
+        drop_projects(project_id=project_id)
         result = await self.project_collection.delete_one({"_id": project_id})
         return result.deleted_count
 

@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-# Vertex AI 라이브러리 선택적 임포트
+#  AI 라이브러리 선택적 임포트
 _VERTEX_AVAILABLE = True
 try:
     import vertexai

@@ -6,7 +6,6 @@ import logging
 from app.config.env import VERTEX_PROJECT_ID, VERTEX_LOCATION, GEMINI_MODEL_VERSION, GOOGLE_APPLICATION_CREDENTIALS
 from ..deps import DbDep
 from .models import SuggestionRequest, SuggestionResponse
-import os
 import datetime
 
 logging.basicConfig(level=logging.INFO)
@@ -20,6 +19,7 @@ class Model:
         self.segment_translations_collection = db.get_collection("segment_translations")
         self.languages_collection = db.get_collection("languages")
 
+        sa_path = GOOGLE_APPLICATION_CREDENTIALS
         try:
             # 서비스 계정 키 파일 경로
             sa_path = GOOGLE_APPLICATION_CREDENTIALS
@@ -77,49 +77,50 @@ class Model:
             return ""
         return response.text.strip()
 
-    
-    async def save_prompt_text(self, segment_id: str):
-        project_segment = await self.project_segemnts_collection.find_one({'_id': ObjectId(segment_id)})
-        trans_segmnet = await self.segment_translations_collection.find_one({'segment_id': segment_id})
-        
-        origin_context = project_segment['source_text']
-        translate_context = trans_segmnet['target_text']
+
+    async def save_prompt_text(self, segment_id: str) -> str:
+        project_segment = await self.project_segemnts_collection.find_one(
+            {"_id": ObjectId(segment_id)}
+        )
+        trans_segment = await self.segment_translations_collection.find_one(
+            {"segment_id": segment_id}
+        )
+        if not project_segment or not trans_segment:
+            raise ValueError("세그먼트 정보를 찾을 수 없습니다.")
 
         document_to_save = {
             "segment_id": segment_id,
-            "original_text": origin_context,
-            "translate_text": translate_context,
+            "original_text": project_segment.get("source_text", ""),
+            "translate_text": trans_segment.get("target_text", ""),
             "sugession_text": None,
             "created_at": datetime.utcnow(),
         }
 
-        result = await self.suggesion_prompt_collection.insert_one(document_to_save.model_dump(by_alias=True))
+        result = await self.suggesion_prompt_collection.insert_one(document_to_save)
         return str(result.inserted_id)
 
     async def get_suggession_by_id(self, segment_id: str):
-        doc = await self.suggesion_prompt_collection.find_one({
-            "$or": [
-                {"_id": ObjectId(segment_id)},
-                {"segment_id": segment_id},  # segment_id가 문자열이라면 ObjectId 변환은 빼세요
-            ]
-        })
+        doc = await self.suggesion_prompt_collection.find_one(
+            {"$or": [{"_id": ObjectId(segment_id)}, {"segment_id": segment_id}]}
+        )
         if doc:
-            return SuggestionResponse(**doc) 
+            return SuggestionResponse(**doc)
         return None
-    
+
     async def delete_suggession_by_id(self, segment_id: str):
-        return await self.suggesion_prompt_collection.delete_one({'segment_id': segment_id})
-    
+        return await self.suggesion_prompt_collection.delete_one(
+            {"segment_id": segment_id}
+        )
+
     async def update_suggession_by_id(self, request: SuggestionRequest):
         update_data = request.model_dump(exclude_unset=True)
 
         await self.suggesion_prompt_collection.update_one(
-            {'segment_id': request.segment_id}, 
-            {'$set': update_data }
+            {"segment_id": request.segment_id},
+            {"$set": update_data},
         )
         return str(request.segment_id)
-    
+
     async def get_suggession_list(self):
-        docs = await self.suggesion_prompt_collection.find({}).to_list(length=None) 
+        docs = await self.suggesion_prompt_collection.find({}).to_list(length=None)
         return [SuggestionResponse(**doc) for doc in docs]
-    

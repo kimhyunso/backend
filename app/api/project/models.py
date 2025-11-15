@@ -8,7 +8,6 @@ PyObjectId = Annotated[
     str, BeforeValidator(lambda v: str(v) if isinstance(v, ObjectId) else v)
 ]
 
-
 class ProjectCreate(BaseModel):
     title: str
     owner_id: str
