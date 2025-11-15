@@ -25,7 +25,6 @@ class ProjectService:
         self.target_collection = db.get_collection("project_targets")
         self.bucket = settings.S3_BUCKET
 
-
     async def get_project_by_id(self, project_id: str) -> ProjectPublic:
         doc = await self.project_collection.find_one({"_id": ObjectId(project_id)})
         doc["project_id"] = str(doc["_id"])

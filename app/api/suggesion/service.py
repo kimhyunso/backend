@@ -3,7 +3,12 @@ from vertexai.generative_models import GenerativeModel
 from google.oauth2 import service_account
 from bson import ObjectId
 import logging
-from app.config.env import VERTEX_PROJECT_ID, VERTEX_LOCATION, GEMINI_MODEL_VERSION, GOOGLE_APPLICATION_CREDENTIALS
+from app.config.env import (
+    VERTEX_PROJECT_ID,
+    VERTEX_LOCATION,
+    GEMINI_MODEL_VERSION,
+    GOOGLE_APPLICATION_CREDENTIALS,
+)
 from ..deps import DbDep
 from .models import SuggestionRequest, SuggestionResponse
 import datetime
@@ -24,59 +29,73 @@ class Model:
             # 서비스 계정 키 파일 경로
             sa_path = GOOGLE_APPLICATION_CREDENTIALS
 
-            if not all([VERTEX_PROJECT_ID, VERTEX_LOCATION, GEMINI_MODEL_VERSION, sa_path]):
-                raise ValueError("필수 환경 변수(PROJECT_ID, LOCATION, MODEL, CREDENTIALS)가 설정되지 않았습니다.")
+            if not all(
+                [VERTEX_PROJECT_ID, VERTEX_LOCATION, GEMINI_MODEL_VERSION, sa_path]
+            ):
+                raise ValueError(
+                    "필수 환경 변수(PROJECT_ID, LOCATION, MODEL, CREDENTIALS)가 설정되지 않았습니다."
+                )
 
             # 2. 자격 증명(Credentials) 생성
             credentials = service_account.Credentials.from_service_account_file(
-                sa_path,
-                scopes=["https://www.googleapis.com/auth/cloud-platform"]
+                sa_path, scopes=["https://www.googleapis.com/auth/cloud-platform"]
             )
-            
+
             vertexai.init(
                 project=VERTEX_PROJECT_ID,
                 location=VERTEX_LOCATION,
-                credentials=credentials
+                credentials=credentials,
             )
-            
+
             self.model = GenerativeModel(GEMINI_MODEL_VERSION)
-            
+
         except Exception as e:
-            logger.error(f'오류 발생: {e}')
-            
+            logger.error(f"오류 발생: {e}")
+
     async def prompt_text(self, segment_id: str, request_context: str) -> str:
-        project_segment = await self.project_segemnts_collection.find_one({'_id': ObjectId(segment_id)})
-        trans_segmnet = await self.segment_translations_collection.find_one({'segment_id': segment_id})
-        
-        origin_context = project_segment['source_text']
-        translate_context = trans_segmnet['target_text']
-        language_code = trans_segmnet['language_code']
+        if not self.model:
+            logger.error("Gemini 모델이 초기화되지 않았습니다.")
+            return ""
 
-        languages_collection = await self.languages_collection.find_one({'language_code': language_code})
-        language_name = languages_collection['name_ko']
+        project_segment = await self.project_segemnts_collection.find_one(
+            {"_id": ObjectId(segment_id)}
+        )
+        trans_segment = await self.segment_translations_collection.find_one(
+            {"segment_id": segment_id}
+        )
+        language_code = trans_segment.get("language_code")
+        language = await self.languages_collection.find_one(
+            {"language_code": language_code}
+        )
 
-        response = None # 오류 발생 시 None을 반환하도록 초기화
+        if not project_segment or not trans_segment or not language:
+            logger.error("세그먼트 정보를 찾을 수 없습니다: %s", segment_id)
+            return ""
+
+        language_name = language.get("name_ko", "")
+        origin_context = project_segment.get("source_text", "")
+        translate_context = trans_segment.get("target_text", "")
+
+        prompt = f"""
+        [Role]: You are a professional dubbing script editor.
+        [Original Text]: {origin_context}
+        [Translated Text]: {translate_context}
+        [Request]: {request_context}
+        [Rules]: 1. Absolutely do not provide multiple suggestions or explanations.
+                2. Respond with only the single, final, revised {language_name} script.
+                3. Do not add any text other than the revised script.
+                4. Never include formatting characters like quotation marks ("), asterisks (*), or hyphens (-) before or after your response.
+        """
+
         try:
-            # save_prompt_text
-            prompt = f"""
-            [Role]: You are a professional dubbing script editor.
-            [Original Text]: {origin_context}
-            [Translated Text]: {translate_context}
-            [Request]: {request_context}
-            [Rules]: 1. Absolutely do not provide multiple suggestions or explanations.
-                   2. Respond with only the single, final, revised {language_name} script.
-                   3. Do not add any text other than the revised script.
-                   4. Never include formatting characters like quotation marks ("), asterisks (*), or hyphens (-) before or after your response.
-            """
             response = await self.model.generate_content_async(prompt)
-            
-        except Exception as e:
-            logger.error(f'Gemini API 호출 오류: {e}')
+        except Exception as exc:
+            logger.error("Gemini API 호출 오류: %s", exc)
+            return ""
 
         if not response:
             return ""
         return response.text.strip()
-
 
     async def save_prompt_text(self, segment_id: str) -> str:
         project_segment = await self.project_segemnts_collection.find_one(

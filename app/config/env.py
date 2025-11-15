@@ -9,10 +9,15 @@ BASE_DIR = Path(__file__).resolve().parents[2]
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 GEMINI_MODEL_VERSION = os.getenv("GEMINI_MODEL_VERSION", "gemini-2.5-flash")
-GOOGLE_APPLICATION_CREDENTIALS_NAME = os.getenv("GOOGLE_APPLICATION_CREDENTIALS_NAME", "ivory-haven-477106-a2.json")
-GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", f"{BASE_DIR}/{GOOGLE_APPLICATION_CREDENTIALS_NAME}")
+GOOGLE_APPLICATION_CREDENTIALS_NAME = os.getenv(
+    "GOOGLE_APPLICATION_CREDENTIALS_NAME", "ivory-haven-477106-a2.json"
+)
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv(
+    "GOOGLE_APPLICATION_CREDENTIALS",
+    f"{BASE_DIR}/{GOOGLE_APPLICATION_CREDENTIALS_NAME}",
+)
 VERTEX_PROJECT_ID = os.getenv("VERTEX_PROJECT_ID", "ivory-haven-477106-a2")
-VERTEX_LOCATION = os.getenv("VERTEX_LOCATION",  "us-central1")
+VERTEX_LOCATION = os.getenv("VERTEX_LOCATION", "us-central1")
 
 _raw_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173")
 origins = [origin.strip() for origin in _raw_origins.split(",") if origin.strip()]

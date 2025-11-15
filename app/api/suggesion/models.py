@@ -20,7 +20,7 @@ class SuggestionResponse(BaseModel):
 
 
 class SuggestDelete(BaseModel):
-    segment_id: PyObjectId
+    segment_id: str
 
 
 class SuggestSave(BaseModel):
@@ -28,7 +28,7 @@ class SuggestSave(BaseModel):
 
 
 class SuggestionRequest(BaseModel):
-    segment_id: PyObjectId
+    segment_id: str
     original_text: Optional[str] = None
     translate_text: Optional[str] = None
     sugession_text: Optional[str] = None
