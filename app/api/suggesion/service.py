@@ -3,12 +3,16 @@ from vertexai.generative_models import GenerativeModel
 from google.oauth2 import service_account
 from bson import ObjectId
 import logging
+<<<<<<< HEAD
 from app.config.env import (
     VERTEX_PROJECT_ID,
     VERTEX_LOCATION,
     GEMINI_MODEL_VERSION,
     GOOGLE_APPLICATION_CREDENTIALS,
 )
+=======
+from app.config.env import VERTEX_PROJECT_ID, VERTEX_LOCATION, GEMINI_MODEL_VERSION, GOOGLE_APPLICATION_CREDENTIALS
+>>>>>>> e4d44ad (fix: ai 모델 변경)
 from ..deps import DbDep
 from .models import SuggestionRequest, SuggestionResponse
 import datetime
@@ -26,6 +30,7 @@ class Model:
 
         sa_path = GOOGLE_APPLICATION_CREDENTIALS
         try:
+<<<<<<< HEAD
             # 서비스 계정 키 파일 경로
             sa_path = GOOGLE_APPLICATION_CREDENTIALS
 
@@ -48,7 +53,32 @@ class Model:
             )
 
             self.model = GenerativeModel(GEMINI_MODEL_VERSION)
+=======
+            self.project_id = VERTEX_PROJECT_ID
+            self.location = VERTEX_LOCATION
+            self.model_name = GEMINI_MODEL_VERSION
+            
+            # 서비스 계정 키 파일 경로
+            sa_path = GOOGLE_APPLICATION_CREDENTIALS
+>>>>>>> e4d44ad (fix: ai 모델 변경)
 
+            if not all([self.project_id, self.location, self.model_name, sa_path]):
+                raise ValueError("필수 환경 변수(PROJECT_ID, LOCATION, MODEL, CREDENTIALS)가 설정되지 않았습니다.")
+
+            # 2. 자격 증명(Credentials) 생성
+            credentials = service_account.Credentials.from_service_account_file(
+                sa_path,
+                scopes=["https://www.googleapis.com/auth/cloud-platform"]
+            )
+            
+            vertexai.init(
+                project=self.project_id,
+                location=self.location,
+                credentials=credentials
+            )
+            
+            self.model = GenerativeModel(GEMINI_MODEL_VERSION)
+            
         except Exception as e:
             logger.error(f"오류 발생: {e}")
 
