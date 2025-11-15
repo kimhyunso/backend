@@ -8,6 +8,7 @@ PyObjectId = Annotated[
     str, BeforeValidator(lambda v: str(v) if isinstance(v, ObjectId) else v)
 ]
 
+
 class ProjectCreate(BaseModel):
     title: str
     owner_id: str
@@ -177,6 +178,5 @@ class SegmentTTSRegenerateResponse(BaseModel):
 
     job_id: str
     project_id: str
-    segment_idx: int
     target_lang: str
     mod: str

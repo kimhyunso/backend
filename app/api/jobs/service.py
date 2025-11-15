@@ -746,7 +746,7 @@ async def start_segments_tts_job(
             detail="speaker_voices.key is required. Either provide voice_sample_id or ensure default_speaker_voices is set for the target language.",
         )
 
-    # segments 형식 변환: { segment_idx, translated_text, start, end } -> { text, s, e }
+    # segments 형식 변환: { translated_text, start, end } -> { text, s, e }
     worker_segments = []
     for seg in segments:
         worker_segments.append(

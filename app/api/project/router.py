@@ -264,42 +264,10 @@ async def regenerate_segment_tts(
         f"🔍 [regenerate_segment_tts] Received request: project_id={project_id}, payload={payload.model_dump()}"
     )
 
-    # segment_id로 segment 조회하여 segment_index 확인
-    from bson import ObjectId
-    from bson.errors import InvalidId
-
-    try:
-        segment_oid = ObjectId(payload.segment_id)
-        logger.info(
-            f"✅ [regenerate_segment_tts] Valid segment_id: {payload.segment_id}"
-        )
-    except InvalidId as exc:
-        logger.error(
-            f"❌ [regenerate_segment_tts] Invalid segment_id: {payload.segment_id}, error: {exc}"
-        )
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid segment_id: {payload.segment_id}",
-        )
-
-    segment_doc = await db["project_segments"].find_one({"_id": segment_oid})
-    if not segment_doc:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Segment not found: {payload.segment_id}",
-        )
-
-    segment_index = segment_doc.get("segment_index")
-    if segment_index is None:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Segment {payload.segment_id} has no segment_index",
-        )
-
     # 단일 세그먼트를 배열로 변환 (worker는 배열을 기대함)
     segments_data = [
         {
-            "segment_idx": segment_index,
+            "segment_id": payload.segment_id,
             "translated_text": payload.translated_text,
             "start": payload.start,
             "end": payload.end,
@@ -319,7 +287,6 @@ async def regenerate_segment_tts(
     return SegmentTTSRegenerateResponse(
         job_id=job.job_id,
         project_id=project_id,
-        segment_idx=segment_index,
         target_lang=payload.target_lang,
         mod=payload.mod,
     )
