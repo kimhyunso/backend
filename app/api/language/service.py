@@ -8,7 +8,11 @@ class LanguageService:
         self.collection = db.get_collection("languages")
 
     async def list_languages(self) -> List[Language]:
-        docs = await self.collection.find({}, {"_id": 0}).sort("language_code", 1).to_list(None)
+        docs = (
+            await self.collection.find({}, {"_id": 0})
+            .sort("sort", 1)
+            .to_list(None)
+        )
         return [Language(**doc) for doc in docs]
 
     async def get_language(self, code: str) -> Language:
@@ -27,7 +31,7 @@ class LanguageService:
     async def update_language(self, code: str, payload: LanguageUpdate) -> Language:
         result = await self.collection.update_one(
             {"language_code": code},
-            {"$set": payload.model_dump()},
+            {"$set": payload.model_dump(exclude_unset=True)},
         )
         if result.matched_count == 0:
             raise HTTPException(status_code=404, detail="language not found")

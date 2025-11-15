@@ -5,11 +5,11 @@ from .service import LanguageService
 from ..deps import DbDep
 
 DEFAULT_LANGUAGES: list[LanguageCreate] = [
-    LanguageCreate(language_code="ko", name_ko="한국어", name_en="Korean"),
-    LanguageCreate(language_code="en", name_ko="영어", name_en="English"),
-    LanguageCreate(language_code="jp", name_ko="일본어", name_en="Japanese"),
-    LanguageCreate(language_code="es", name_ko="스페인어", name_en="Spanish"),
-    LanguageCreate(language_code="fr", name_ko="프랑스어", name_en="French"),
+    LanguageCreate(language_code="ko", name_ko="한국어", name_en="Korean", sort=0),
+    LanguageCreate(language_code="en", name_ko="영어", name_en="English", sort=1),
+    LanguageCreate(language_code="jp", name_ko="일본어", name_en="Japanese", sort=2),
+    LanguageCreate(language_code="es", name_ko="스페인어", name_en="Spanish", sort=3),
+    LanguageCreate(language_code="fr", name_ko="프랑스어", name_en="French", sort=4),
 ]
 
 router = APIRouter(prefix="/languages", tags=["languages"])
