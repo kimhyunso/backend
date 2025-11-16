@@ -663,6 +663,7 @@ async def start_segments_tts_job(
 
     # voice_sample_id 또는 default_speaker_voices에서 speaker_voices 매핑
     resolved_speaker_voices = None
+    aws_s3_bucket = os.getenv("AWS_S3_BUCKET")
 
     # 1. voice_sample_id가 있으면 해당 voice_sample 사용
     if voice_sample_id:
@@ -677,6 +678,8 @@ async def start_segments_tts_job(
             resolved_speaker_voices = {
                 "key": voice_sample.file_path_wav,
             }
+            if aws_s3_bucket:
+                resolved_speaker_voices["bucket"] = aws_s3_bucket
             if voice_sample.prompt_text:
                 resolved_speaker_voices["text_prompt_value"] = voice_sample.prompt_text
         except Exception as exc:
@@ -696,7 +699,7 @@ async def start_segments_tts_job(
 
         if target_lang in default_speaker_voices:
             # default_speaker_voices[target_lang] = { speaker: { ref_wav_key, prompt_text } }
-            # -> speaker_voices = { key: ref_wav_key, ... }
+            # -> speaker_voices = { key: ref_wav_key, bucket(선택), text_prompt_value(선택), ... }
             lang_voices = default_speaker_voices[target_lang]
             logger.info(
                 f"🔍 [start_segments_tts_job] Found lang_voices for {target_lang}: {lang_voices}"
@@ -713,6 +716,8 @@ async def start_segments_tts_job(
                     resolved_speaker_voices = {
                         "key": first_speaker["ref_wav_key"],
                     }
+                    if aws_s3_bucket:
+                        resolved_speaker_voices["bucket"] = aws_s3_bucket
                     if "prompt_text" in first_speaker:
                         resolved_speaker_voices["text_prompt_value"] = first_speaker[
                             "prompt_text"

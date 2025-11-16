@@ -719,7 +719,7 @@ async def set_job_status(job_id: str, payload: JobUpdateStatus, db: DbDep) -> Jo
                 )
 
         target_update = ProjectTargetUpdate(
-            status=ProjectTargetStatus.COMPLETED, progress=70  # 세그먼트 TTS 완료
+            status=ProjectTargetStatus.COMPLETED, progress=100  # 세그먼트 TTS 완료
         )
     elif stage == "mux_started":  # 비디오 처리 시작
         target_update = ProjectTargetUpdate(
