@@ -120,6 +120,7 @@ class EditorPlaybackState(BaseModel):
     playback_rate: float = 1.0
     video_source: str | None
     audio_source: str | None
+    background_audio_source: str | None
 
 
 class SegmentTranslationResponse(BaseModel):

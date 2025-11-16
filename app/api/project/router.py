@@ -189,6 +189,7 @@ async def get_project_editor(
         playback_rate=1.0,
         video_source=project.video_source,
         audio_source=project.audio_source,
+        background_audio_source=project.background_audio_source,
     )
 
     return EditorStateResponse(

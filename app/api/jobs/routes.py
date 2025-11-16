@@ -21,6 +21,7 @@ from ..assets.service import AssetService
 from ..assets.models import AssetCreate, AssetType
 from app.utils.project_utils import extract_language_code
 from app.utils.s3 import download_metadata_from_s3, parse_segments_from_metadata
+from app.utils.audio import get_audio_duration_from_s3
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/jobs", tags=["jobs"])
@@ -71,6 +72,34 @@ async def dispatch_target_update(
         "progress": progress,
         "timestamp": datetime.now().isoformat() + "Z",
     }
+    for queue in list(listeners):
+        await queue.put(event)
+
+
+async def dispatch_audio_completed(
+    project_id: str,
+    language_code: str,
+    segment_id: str,
+    audio_s3_key: str,
+    audio_duration: float,
+):
+    """오디오 생성 완료 이벤트를 SSE로 브로드캐스트"""
+    from ..audio.router import audio_channels
+
+    channel_key = f"{project_id}:{language_code}"
+    listeners = audio_channels.get(channel_key, set())
+
+    event = {
+        "event": "audio-completed",
+        "data": {
+            "segmentId": segment_id,
+            "audioS3Key": audio_s3_key,
+            "audioDuration": audio_duration,
+            "projectId": project_id,
+            "languageCode": language_code,
+        },
+    }
+
     for queue in list(listeners):
         await queue.put(event)
 
@@ -638,6 +667,33 @@ async def set_job_status(job_id: str, payload: JobUpdateStatus, db: DbDep) -> Jo
                                 translation_id=translation_id,
                                 segment_audio_url=audio_url,
                             )
+
+                            # 오디오 duration 구하고 SSE 이벤트 발송
+                            try:
+                                audio_duration = await get_audio_duration_from_s3(
+                                    audio_key
+                                )
+                                if audio_duration is not None:
+                                    logger.info(
+                                        f"✅ [segment_tts_completed] Got audio duration: {audio_duration}s for {audio_key}"
+                                    )
+                                    # SSE 이벤트 발송
+                                    await dispatch_audio_completed(
+                                        project_id=project_id,
+                                        language_code=language_code,
+                                        segment_id=segment_id,
+                                        audio_s3_key=audio_key,
+                                        audio_duration=audio_duration,
+                                    )
+                                else:
+                                    logger.warning(
+                                        f"⚠️ [segment_tts_completed] Failed to get audio duration for {audio_key}"
+                                    )
+                            except Exception as duration_exc:
+                                logger.error(
+                                    f"❌ [segment_tts_completed] Error getting audio duration: {duration_exc}",
+                                    exc_info=True,
+                                )
 
                         else:
                             logger.warning(

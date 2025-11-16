@@ -3,16 +3,13 @@ from fastapi import HTTPException
 from .models import LanguageCreate, LanguageUpdate, Language
 from ..deps import DbDep
 
+
 class LanguageService:
     def __init__(self, db: DbDep):
         self.collection = db.get_collection("languages")
 
     async def list_languages(self) -> List[Language]:
-        docs = (
-            await self.collection.find({}, {"_id": 0})
-            .sort("sort", 1)
-            .to_list(None)
-        )
+        docs = await self.collection.find({}, {"_id": 0}).sort("sort", 1).to_list(None)
         return [Language(**doc) for doc in docs]
 
     async def get_language(self, code: str) -> Language:
@@ -22,7 +19,9 @@ class LanguageService:
         return Language(**doc)
 
     async def create_language(self, payload: LanguageCreate) -> Language:
-        exists = await self.collection.find_one({"language_code": payload.language_code})
+        exists = await self.collection.find_one(
+            {"language_code": payload.language_code}
+        )
         if exists:
             raise HTTPException(status_code=409, detail="language already exists")
         await self.collection.insert_one(payload.model_dump())

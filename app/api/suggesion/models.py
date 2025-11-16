@@ -32,4 +32,9 @@ class SuggestionRequest(BaseModel):
     original_text: Optional[str] = None
     translate_text: Optional[str] = None
     sugession_text: Optional[str] = None
-    created_at: Optional[datetime] = None
+    created_at: datetime
+
+    class Config:
+        allow_population_by_field_name = True
+        arbitrary_types_allowed = True  # PyObjectId 같은 커스텀 타입 허용
+        json_encoders = {ObjectId: str}  # ObjectId를 str으로 변환
