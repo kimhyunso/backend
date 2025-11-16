@@ -7,6 +7,7 @@ import os
 import json
 import logging
 from typing import Any, Dict, List, Optional
+from app.config.env import GOOGLE_APPLICATION_CREDENTIALS
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +81,7 @@ class GeminiTranslator:
         sa_path = (
             _env_str("VERTEX_SERVICE_ACCOUNT_JSON")
             or _env_str("VERTEX_SA_PATH")
-            or _env_str("GOOGLE_APPLICATION_CREDENTIALS")
+            or GOOGLE_APPLICATION_CREDENTIALS
         )
 
         creds = None

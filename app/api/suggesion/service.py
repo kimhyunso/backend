@@ -81,10 +81,11 @@ class Model:
         [Original Text]: {origin_context}
         [Translated Text]: {translate_context}
         [Request]: {request_context}
-        [Rules]: 1. Absolutely do not provide multiple suggestions or explanations.
-                2. Respond with only the single, final, revised {language_name} script.
-                3. Do not add any text other than the revised script.
-                4. Never include formatting characters like quotation marks ("), asterisks (*), or hyphens (-) before or after your response.
+        [Rules]:
+        1. Do not provide any explanations, apologies, or extra text.
+        2. Respond with only the single, final, revised {language_name} script.
+        3. Do not add any text before or after the revised script.
+        4. **CRITICAL:** Your output must be the raw text of the script *only*. Do not wrap your response in quotation marks ("), apostrophes ('), asterisks (*), hyphens (-), or any other formatting characters.
         """
 
         try:
