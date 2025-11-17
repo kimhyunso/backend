@@ -3,7 +3,6 @@ import os
 import asyncio
 import logging
 import tempfile
-import logging
 from uuid import uuid4
 from hashlib import sha256
 from sse_starlette.sse import EventSourceResponse
@@ -37,7 +36,6 @@ from moviepy.editor import VideoFileClip
 
 logger = logging.getLogger(__name__)
 upload_router = APIRouter(prefix="/storage", tags=["storage"])
-logger = logging.getLogger("api_logger")
 
 
 def _make_idem_key(req: RegisterRequest, header_key: str | None) -> str:
@@ -106,7 +104,7 @@ async def register_source(payload: RegisterRequest, request: Request, db: DbDep)
                 "project_id": payload.project_id,
                 "source_url": payload.youtube_url,
             },
-            job_timeout='10m',
+            job_timeout="10m",
         )
     except RedisError as exc:
         raise HTTPException(
@@ -229,7 +227,7 @@ async def finish_upload(
         start_job=start_job,
         start_jobs_for_targets=start_jobs_for_targets,
         db=db,
-        context="finish_upload"
+        context="finish_upload",
     )
 
     return result
@@ -268,6 +266,8 @@ async def stream_events(project_id: str):
                 data = message["data"]
                 if isinstance(data, bytes):
                     data = data.decode()
+
+                logger.info(f"event stream: {data}")
                 yield {"event": "progress", "data": data}
         finally:
             pubsub.unsubscribe(channel)

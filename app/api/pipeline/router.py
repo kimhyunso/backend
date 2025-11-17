@@ -8,8 +8,10 @@ from collections import defaultdict
 from app.api.deps import DbDep
 from .service import get_pipeline_status, update_pipeline_stage
 from .models import PipelineUpdate, ProjectPipeline
+import logging
 
 pipeline_router = APIRouter(prefix="/pipeline", tags=["Pipeline"])
+logger = logging.getLogger(__name__)
 
 
 @pipeline_router.get("/{project_id}/status", summary="파이프라인 상태 조회")
@@ -43,6 +45,7 @@ async def stream_pipeline_status(project_id: str, db: DbDep):
                 data = pipeline.model_dump(mode="json")
                 # datetime 객체를 문자열로 변환
                 data = _serialize_datetime(data)
+                logger.info(f"info data: {data}")
 
                 yield f"data: {json.dumps(data)}\n\n"
 
