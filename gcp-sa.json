@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "ivory-haven-477106-a2",
+  "private_key_id": "b79dc5fa3ddfcc40f14fd46ba5e8e17947af60ff",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCNYJW+q1td9zbs\nJlFJh7wXjwv3KnEKNK510sxDmaobT+A4K742jAkrvWQXsfV4hYKBqyJK/0rWyVkY\ncor7zNx0z+cn0GwBHRfbWAOwJbyjF8V68oGLTFO5wlHzcuXI0aIbD/VOUOeoyso8\nBRw/DQHK8UbFR4ipghJfVpHhPYdn0R1WuORonaZtr3pvFIKal/XQ54M4KkrrHBhR\n73O0xZecMLLxQyvvtztjdIjWq2POfqEUi8ThdtRJDu3aErPOhJfvAbQgi54SNPzE\n4GbQNo/RhM0tcMD977raLCCqTpFZp3wpPrumwcCQ0QzE9L8h6xSQWMC7kA3nIc/5\nGgHmUep9AgMBAAECggEARORFZBm9Vp8yaMXNQ578haBjrMhGODpurySO+/wD2/ZC\n5SxPruXzTBiojzFdVCL+8u/xMImRrvOD0nlyh3wPC28KDakvECXcq7qKZYomD3V0\nelJ01OvXOsRZyd954K9ipnxSxZyAHozfGntFBeZxMrL7EQQoMK2dBU86m/8vHeOb\nueom5MmAI7oyuW5XmTszSkydRRVq/XEfDygkUdn8q8czKwDuk07Q+LkuhlpsH9TG\nrTdq+fL/qfiDD7mRvJD5tRIwrWxWTM9CqF7jtsU5TlubQL/sotY8SLyCF+r54X6+\n7ecpmvdLSK5qJmtq4XW6hzQynx+QBGyTRO7WWIkJ8wKBgQDFAHTVe9XMfAuL/Vpe\n7Nm3FpL0uljxxmo5B93u6vJbNf/qlqWy3WBTMUrFqalwpuzFdE12/I15b+10xLpK\nlzpRba2tChHPVAuyLwhlHaLE2JxVW2ldFxC8qATFUmxZou5jLuK6sGzYmIql08Yd\npqn5HtfqhdRrjr18/tqIuXQxWwKBgQC3t5Ac9jJNcFpiMUjg+9FwhjO1uJER79r8\nscKEAcFjRXtOJme0NHUFf6qHKJdUwuM62I9k6N4iprER9i1vysoszhVxjKp51Jsm\nK77b+OVCrUrYb7J+/IDySLymrgNA+w0/by2ZIL73RdqR8zvWyS/Al8Eq9k/HlqUG\nZiwxNxmDBwKBgEJz6/VTh4Qp189KECDzLmG3SK0q6vPrpUtFnxSHxmcEKSad2Jkk\nWejWOM3CdHiepkHZAISBnst2+RepgNnGd5KeN7amLenNBQD/IorRW2WhV+LnKfyP\n2kJ5Ptq8+fWmo1lrqGmnN6A8nJBhhnPcE3wIbnca29PIW5z9bwQt4sb/AoGBAJVH\nbq5Zzl3mIUsQSOunMnOAWJwcMKSmhQY3Wprw4jbLynmh8zoWNdAWAHZ6oRyajxDN\nzxZrsbPuRosVwa3I1aa6feoaJpuACeFmQltzTrZzIRHlEODmQ9CbEc9OLg6q8ATP\nTfnTBdjexc86GTFZoJeZt7g1FHZVDhq5AseqwewZAoGADjPglqGFnEOZUaSxCn8c\ng6kpksGrrG4gxxK0Zs4L7otvaa5VA8lMCOQRzB+OymXHxh1n3h8b3gbaRS7eLoER\nyUpRdDnBqZ/ZNBa7W1LtnsGtyqu2Pi+W0ePGBSoZSIkuHbxBfyz85U0EFGDCAfSz\n+UoBrTPkYzSagPWP6cO+79g=\n-----END PRIVATE KEY-----\n",
+  "client_email": "vertax@ivory-haven-477106-a2.iam.gserviceaccount.com",
+  "client_id": "103080360472168254154",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/vertax%40ivory-haven-477106-a2.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
