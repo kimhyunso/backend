@@ -38,6 +38,8 @@ from .models import (
     TestSynthesisResponse,
     VoiceSamplePrepareUpload,
     VoiceSampleFinishUpload,
+    VoiceSampleAvatarPrepareUpload,
+    VoiceSampleAvatarUpdate,
 )
 from .utils import (
     validate_audio_file_info,
@@ -52,6 +54,7 @@ logger = logging.getLogger(__name__)
 voice_samples_router = APIRouter(prefix="/voice-samples", tags=["Voice Samples"])
 
 AWS_S3_BUCKET = os.getenv("AWS_S3_BUCKET")
+AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-2")
 
 SERVICE_INTRO_SCRIPT = "안녕하세요. AI 음성 합성 서비스를 소개합니다. 이 서비스를 통해 여러분의 목소리로 다양한 콘텐츠를 제작할 수 있습니다."
 
@@ -243,6 +246,9 @@ async def finish_voice_sample_upload(
         is_public=payload.is_public,
         file_path_wav=payload.object_key,  # mp3 또는 wav 모두 가능
         audio_sample_url=None,  # Optional: 미리듣기용 저용량 mp3 URL (없으면 file_path_wav를 storage API로 사용)
+        country=payload.country,
+        gender=payload.gender,
+        avatar_image_path=payload.avatar_image_path,
     )
 
     voice_sample = await service.create_voice_sample(data, current_user)
@@ -279,6 +285,82 @@ async def finish_voice_sample_upload(
         )
         logger.exception("Exception details:")
     return voice_sample
+
+
+@voice_samples_router.post(
+    "/{sample_id}/avatar/prepare-upload",
+    status_code=status.HTTP_200_OK,
+)
+async def prepare_voice_sample_avatar_upload(
+    sample_id: str,
+    payload: VoiceSampleAvatarPrepareUpload,
+    db: DbDep,
+    current_user: UserOut = Depends(get_current_user_from_cookie),
+):
+    """보이스 샘플 아바타 업로드용 presigned URL"""
+    if not AWS_S3_BUCKET:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="AWS_S3_BUCKET not configured",
+        )
+
+    service = VoiceSampleService(db)
+    sample = await service.get_voice_sample(sample_id, current_user)
+    if str(sample.owner_id) != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only upload avatar for your own samples",
+        )
+
+    suffix = Path(payload.filename).suffix or ".png"
+    object_key = f"voice-samples/images/{sample_id}/{uuid4()}{suffix}"
+    try:
+        presigned = s3.generate_presigned_post(
+            Bucket=AWS_S3_BUCKET,
+            Key=object_key,
+            Fields={"Content-Type": payload.content_type},
+            Conditions=[["starts-with", "$Content-Type", payload.content_type.split("/")[0]]],
+            ExpiresIn=300,
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"avatar presign 실패: {exc}",
+        ) from exc
+
+    return {
+        "upload_url": presigned["url"],
+        "fields": presigned["fields"],
+        "object_key": object_key,
+    }
+
+
+@voice_samples_router.post(
+    "/{sample_id}/avatar",
+    response_model=VoiceSampleOut,
+    status_code=status.HTTP_200_OK,
+)
+async def finalize_voice_sample_avatar(
+    sample_id: str,
+    payload: VoiceSampleAvatarUpdate,
+    db: DbDep,
+    current_user: UserOut = Depends(get_current_user_from_cookie),
+):
+    """보이스 샘플 아바타 업로드 완료 처리"""
+    service = VoiceSampleService(db)
+    sample = await service.get_voice_sample(sample_id, current_user)
+    if str(sample.owner_id) != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only update avatar for your own samples",
+        )
+
+    updated = await service.update_voice_sample(
+        sample_id,
+        VoiceSampleUpdate(avatar_image_path=payload.object_key),
+        current_user,
+    )
+    return updated
 
 
 @voice_samples_router.get(

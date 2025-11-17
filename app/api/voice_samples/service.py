@@ -35,6 +35,9 @@ class VoiceSampleService:
             "audio_sample_url": data.audio_sample_url,
             "prompt_text": data.prompt_text,
             "created_at": datetime.utcnow(),
+            "country": data.country,
+            "gender": data.gender,
+            "avatar_image_path": data.avatar_image_path,
         }
 
         try:
@@ -88,7 +91,15 @@ class VoiceSampleService:
             except Exception:
                 pass
 
-        return VoiceSampleOut(**sample, is_favorite=is_favorite)
+        favorite_total = await self.favorites_collection.count_documents(
+            {"type": "voice_sample", "sample_id": sample_oid}
+        )
+
+        return VoiceSampleOut(
+            **sample,
+            is_favorite=is_favorite,
+            favorite_count=favorite_total,
+        )
 
     async def list_voice_samples(
         self,
@@ -207,8 +218,25 @@ class VoiceSampleService:
         else:
             favorite_ids = set()
 
+        favorite_counts: dict[str, int] = {}
+        if samples:
+            sample_ids = [sample["_id"] for sample in samples]
+            count_docs = await self.favorites_collection.aggregate(
+                [
+                    {"$match": {"type": "voice_sample", "sample_id": {"$in": sample_ids}}},
+                    {"$group": {"_id": "$sample_id", "count": {"$sum": 1}}},
+                ]
+            ).to_list(length=None)
+            favorite_counts = {
+                str(doc["_id"]): int(doc.get("count", 0)) for doc in count_docs
+            }
+
         result = [
-            VoiceSampleOut(**sample, is_favorite=str(sample["_id"]) in favorite_ids)
+            VoiceSampleOut(
+                **sample,
+                is_favorite=str(sample["_id"]) in favorite_ids,
+                favorite_count=favorite_counts.get(str(sample["_id"]), 0),
+            )
             for sample in samples
         ]
 
@@ -250,6 +278,12 @@ class VoiceSampleService:
             update_data["audio_sample_url"] = data.audio_sample_url
         if data.prompt_text is not None:
             update_data["prompt_text"] = data.prompt_text
+        if data.country is not None:
+            update_data["country"] = data.country
+        if data.gender is not None:
+            update_data["gender"] = data.gender
+        if getattr(data, "avatar_image_path", None) is not None:
+            update_data["avatar_image_path"] = data.avatar_image_path
 
         if not update_data:
             return VoiceSampleOut(**sample, is_favorite=False)
