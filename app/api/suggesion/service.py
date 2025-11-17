@@ -2,6 +2,7 @@ import vertexai
 from vertexai.generative_models import GenerativeModel
 from google.oauth2 import service_account
 from bson import ObjectId
+import asyncio
 import logging
 from app.config.env import (
     VERTEX_PROJECT_ID,
@@ -73,67 +74,78 @@ class Model:
             logger.error("Gemini 모델이 초기화되지 않았습니다.")
             return ""
 
-        project_segment = await self.project_segemnts_collection.find_one(
-            {"_id": ObjectId(segment_id)}
-        )
-        trans_segment = await self.segment_translations_collection.find_one(
-            {"segment_id": segment_id}
-        )
-        language_code = trans_segment.get("language_code")
-        language = await self.languages_collection.find_one(
-            {"language_code": language_code}
-        )
-
-        if not project_segment or not trans_segment or not language:
-            logger.error("세그먼트 정보를 찾을 수 없습니다: %s", segment_id)
-            return ""
-
-        language_name = language.get("name_ko", "")
-        origin_context = project_segment.get("source_text", "")
-        translate_context = trans_segment.get("target_text", "")
-
-        prompt = f"""
-        [Role]: You are a professional dubbing script editor.
-        [Original Text]: {origin_context}
-        [Translated Text]: {translate_context}
-        [Request]: {request_context}
-        [Rules]:
-        1. Do not provide any explanations, apologies, or extra text.
-        2. Respond with only the single, final, revised {language_name} script.
-        3. Do not add any text before or after the revised script.
-        4. **CRITICAL:** Your output must be the raw text of the script *only*. Do not wrap your response in quotation marks ("), apostrophes ('), asterisks (*), hyphens (-), or any other formatting characters.
-        """
-
         try:
+            # --- 1. DB 조회 병렬 처리 ---
+            # 3개의 비동기 작업을 리스트로 준비
+            tasks = [
+                self.project_segemnts_collection.find_one(
+                    {"_id": ObjectId(segment_id)}
+                ),
+                self.segment_translations_collection.find_one(
+                    {"segment_id": segment_id}
+                ),
+                # 이 언어 코드는 trans_segment가 완료되어야 알 수 있으므로,
+                # 이 방식은 적합하지 않습니다. (아래 2안 참고)
+            ]
+
+            # --- (수정) DB 호출 2단계로 병렬화 ---
+
+            # 1단계: 필수 정보 2개를 동시에 가져오기
+            tasks_step1 = [
+                self.project_segemnts_collection.find_one(
+                    {"_id": ObjectId(segment_id)}
+                ),
+                self.segment_translations_collection.find_one(
+                    {"segment_id": segment_id}
+                ),
+            ]
+
+            project_segment, trans_segment = await asyncio.gather(*tasks_step1)
+
+            if not project_segment or not trans_segment:
+                logger.error("세그먼트 정보를 찾을 수 없습니다: %s", segment_id)
+                return ""
+
+            # 2단계: 1단계 정보를 바탕으로 3번째 정보 가져오기
+            language_code = trans_segment.get("language_code")
+            language = await self.languages_collection.find_one(
+                {"language_code": language_code}
+            )
+
+            if not language:
+                logger.error("언어 정보를 찾을 수 없습니다: %s", language_code)
+                return ""
+            # --- 병렬 처리 완료 ---
+
+            language_name = language.get("name_ko", "")
+            origin_context = project_segment.get("source_text", "")
+            translate_context = trans_segment.get("target_text", "")
+
+            prompt = f"""
+            [Role]: You are a professional dubbing script editor.
+            [Original Text]: {origin_context}
+            [Translated Text]: {translate_context}
+            [Request]: {request_context}
+            [Rules]:
+            1. Do not provide any explanations, apologies, or extra text.
+            2. Respond with only the single, final, revised {language_name} script.
+            3. Do not add any text before or after the revised script.
+            4. **CRITICAL:** Your output must be the raw text of the script *only*. Do not wrap your response in quotation marks ("), apostrophes ('), asterisks (*), hyphens (-), or any other formatting characters.
+            """
+
+            # --- 2. 비-스트리밍 API 사용 ---
+            # (이것이 '완성된 텍스트'를 얻는 가장 빠르고 올바른 방법입니다.)
             response = await self.model.generate_content_async(prompt)
+
+            if not response:
+                return ""
+
+            cleaned_text = response.text.strip().strip('"')
+            return cleaned_text
+
         except Exception as exc:
-            logger.error("Gemini API 호출 오류: %s", exc)
+            logger.error(f"Gemini API 또는 DB 호출 오류: {exc}", exc_info=True)
             return ""
-
-        if not response:
-            return ""
-        return response.text.strip()
-
-    async def save_prompt_text(self, segment_id: str) -> str:
-        project_segment = await self.project_segemnts_collection.find_one(
-            {"_id": ObjectId(segment_id)}
-        )
-        trans_segment = await self.segment_translations_collection.find_one(
-            {"segment_id": segment_id}
-        )
-        if not project_segment or not trans_segment:
-            raise ValueError("세그먼트 정보를 찾을 수 없습니다.")
-
-        document_to_save = {
-            "segment_id": segment_id,
-            "original_text": project_segment.get("source_text", ""),
-            "translate_text": trans_segment.get("target_text", ""),
-            "sugession_text": None,
-            "created_at": datetime.utcnow(),
-        }
-
-        result = await self.suggesion_prompt_collection.insert_one(document_to_save)
-        return str(result.inserted_id)
 
     async def get_suggession_by_id(self, segment_id: str):
         doc = await self.suggesion_prompt_collection.find_one(

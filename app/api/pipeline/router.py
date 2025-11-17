@@ -25,6 +25,7 @@ async def update_project_pipeline_stage(
     project_id: str, payload: PipelineUpdate, db: DbDep
 ) -> Dict[str, Any]:
     """파이프라인 단계의 상태를 업데이트합니다."""
+    logger.info(f"pipline update: {project_id}")
     # payload의 project_id를 URL의 project_id로 덮어쓰기
     payload.project_id = project_id
     result = await update_pipeline_stage(db, payload)
