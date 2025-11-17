@@ -192,4 +192,5 @@ pip-selfcheck.json
 store/
 
 CLAUDE*
+gcp.json
 gcp-sa.json
